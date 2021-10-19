@@ -1,5 +1,5 @@
 import type {NextApiRequest, NextApiResponse} from 'next';
-import {getNodeURL} from '@figment-solana/lib';
+import {getNodeURL} from '@solana/lib';
 import {
   Connection,
   PublicKey,
@@ -22,20 +22,31 @@ export default async function transfer(
     // The secret key is stored in our state as a stringified array
     const secretKey = Uint8Array.from(JSON.parse(secret as string));
 
-    //... let's skip the beginning as it should be familiar for you by now!
+    //... let's snip the beginning as it should be familiar for you by now!
     // Find the parameter to pass
-    const instructions = SystemProgram.transfer;
+    const instructions = SystemProgram.transfer({
+      fromPubkey,
+      toPubkey,
+      lamports,
+    })
 
     // How could you construct a signer array's
-    const signers = undefined;
+    const signers = [
+      {
+        publicKey: fromPubkey,
+        secretKey,
+      },
+    ];
 
     // Maybe adding something to a Transaction could be interesting ?
-    const transaction = new Transaction();
+    const transaction = new Transaction().add(instructions);
 
-    // We can send and confirm a transaction in one row.
-    const hash = undefined;
-
-    res.status(200).json(hash);
+    const hash = await sendAndConfirmTransaction(
+      connection,
+      transaction,
+      signers,
+    );
+    res.status(200).json(hash); // You should know what is expected here.
   } catch (error) {
     let errorMessage = error instanceof Error ? error.message : 'Unknown Error';
     res.status(500).json(errorMessage);
